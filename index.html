@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Love Calculator 💕</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #fff5f5 0%, #ffe4e4 50%, #fff5f5 100%);
+      overflow: hidden;
+    }
+
+    .hearts-bg { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+    .heart-particle { position: absolute; bottom: -50px; animation: floatUp linear infinite; opacity: 0; }
+    @keyframes floatUp {
+      0%   { transform: translateY(0) rotate(0deg); opacity: 0.7; }
+      100% { transform: translateY(-110vh) rotate(360deg); opacity: 0; }
+    }
+
+    .card {
+      position: relative; z-index: 1;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(18px);
+      border: 1px solid rgba(220,38,38,0.2);
+      border-radius: 28px;
+      padding: 48px 44px;
+      width: 420px; max-width: 95vw;
+      text-align: center;
+      box-shadow: 0 24px 60px rgba(185,28,28,0.15);
+    }
+
+    .emoji-title { font-size: 3rem; }
+    h1 { margin: 12px 0 6px; font-size: 1.8rem; color: #7f1d1d; letter-spacing: 1px; }
+    .subtitle { color: #b91c1c; font-size: 0.9rem; margin-bottom: 32px; }
+
+    .input-group { position: relative; margin-bottom: 18px; text-align: left; }
+    .input-group label { display: block; font-size: 0.8rem; color: #991b1b; margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase; }
+    .input-group input {
+      width: 100%; padding: 14px 18px; border-radius: 14px;
+      border: 1.5px solid rgba(220,38,38,0.3);
+      background: #fff; color: #450a0a; font-size: 1rem;
+      outline: none; transition: border-color 0.3s, background 0.3s;
+    }
+    .input-group input::placeholder { color: rgba(185,28,28,0.35); }
+    .input-group input:focus { border-color: #dc2626; background: #fff5f5; }
+
+    .heart-divider { font-size: 1.6rem; margin: 4px 0 20px; animation: pulse 1.5s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+
+    button {
+      width: 100%; padding: 15px; border: none; border-radius: 14px;
+      background: linear-gradient(135deg, #991b1b, #ef4444);
+      color: #fff; font-size: 1.05rem; font-weight: 700; letter-spacing: 0.5px;
+      cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; margin-top: 4px;
+    }
+    button:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(220,38,38,0.4); }
+    button:active { transform: scale(0.98); }
+
+    .result { margin-top: 32px; display: none; animation: fadeSlideIn 0.5s ease; }
+    @keyframes fadeSlideIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+    .result.visible { display: block; }
+
+    .names-display { font-size: 1rem; color: #991b1b; margin-bottom: 18px; }
+    .names-display strong { color: #7f1d1d; }
+
+    /* ── Ring ── */
+    .ring-wrap {
+      position: relative;
+      width: 210px; height: 210px;
+      margin: 0 auto 18px;
+    }
+    svg.ring { transform: rotate(-90deg); }
+    .ring-bg   { fill: none; stroke: rgba(220,38,38,0.12); stroke-width: 24; }
+    .ring-fill {
+      fill: none; stroke-width: 24; stroke-linecap: round;
+      transition: stroke-dashoffset 1.3s cubic-bezier(.22,.61,.36,1);
+    }
+    .ring-pct {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 2px;
+    }
+    .ring-pct-num {
+      font-size: 4rem; font-weight: 900; color: #991b1b; line-height: 1;
+    }
+    .ring-pct-label {
+      font-size: 1.1rem; color: #b91c1c; font-weight: 600;
+    }
+
+    .love-label { font-size: 1.3rem; font-weight: 700; margin-bottom: 6px; }
+    .love-msg   { font-size: 0.9rem; color: #991b1b; line-height: 1.5; }
+
+    .color-cold { stroke: #dc2626; }
+    .color-warm { stroke: #dc2626; }
+    .color-hot  { stroke: #dc2626; }
+    .label-cold { color: #5a9ab5; }
+    .label-warm { color: #ea580c; }
+    .label-hot  { color: #b91c1c; }
+
+    /* ── Proposal Dialog ── */
+    .overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(127,29,29,0.45);
+      backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+    .overlay.hidden { display: none; }
+
+    .dialog {
+      background: linear-gradient(145deg, #ffffff, #fff1f2);
+      border: 1.5px solid rgba(220,38,38,0.25);
+      border-radius: 28px;
+      padding: 44px 40px;
+      max-width: 400px; width: 90vw;
+      text-align: center;
+      box-shadow: 0 30px 80px rgba(185,28,28,0.2);
+      animation: popIn 0.4s cubic-bezier(.34,1.56,.64,1);
+      position: relative;
+    }
+    @keyframes popIn { from { transform: scale(0.6); opacity:0; } to { transform: scale(1); opacity:1; } }
+
+    .dialog-emoji { font-size: 3.5rem; margin-bottom: 12px; display: block; }
+    .dialog-title { font-size: 1.6rem; font-weight: 800; color: #7f1d1d; margin-bottom: 10px; }
+    .dialog-sub   { font-size: 0.95rem; color: #991b1b; margin-bottom: 28px; line-height: 1.5; min-height: 44px; }
+    .dialog-btns  { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+    .btn-yes {
+      padding: 13px 36px; border: none; border-radius: 50px;
+      background: linear-gradient(135deg, #991b1b, #ef4444);
+      color: #fff; font-size: 1rem; font-weight: 700;
+      cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(220,38,38,0.4);
+    }
+    .btn-yes:hover { transform: scale(1.08); }
+
+    .btn-no {
+      padding: 13px 36px; border: 1.5px solid rgba(220,38,38,0.3); border-radius: 50px;
+      background: transparent; color: #b91c1c;
+      font-size: 1rem; font-weight: 600; cursor: pointer;
+      transition: all 0.2s; position: relative;
+    }
+    .btn-no:hover { border-color: #991b1b; color: #7f1d1d; }
+    .btn-no.runaway { transition: transform 0.15s ease; }
+
+    .surrender { font-size: 1.1rem; color: #991b1b; line-height: 1.6; animation: fadeSlideIn 0.5s ease; }
+    .confetti-row { font-size: 2rem; letter-spacing: 4px; margin: 10px 0; }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%     { transform: translateX(-8px) rotate(-3deg); }
+      40%     { transform: translateX(8px) rotate(3deg); }
+      60%     { transform: translateX(-6px); }
+      80%     { transform: translateX(6px); }
+    }
+    .shake { animation: shake 0.4s ease; }
+  </style>
+</head>
+<body>
+
+<div class="hearts-bg" id="heartsBg"></div>
+
+<div class="card">
+  <div class="emoji-title">💘</div>
+  <h1>Love Calculator</h1>
+  <p class="subtitle">Discover your compatibility score</p>
+
+  <div class="input-group">
+    <label>Boy's Name</label>
+    <input type="text" id="boyName" placeholder="Enter his name…" />
+  </div>
+
+  <div class="heart-divider">💕</div>
+
+  <div class="input-group">
+    <label>Girl's Name</label>
+    <input type="text" id="girlName" placeholder="Enter her name…" />
+  </div>
+
+  <button onclick="calculate()">Calculate Love ❤️</button>
+
+  <div class="result" id="result">
+    <p class="names-display" id="namesDisplay"></p>
+    <div class="ring-wrap">
+      <svg class="ring" width="210" height="210" viewBox="0 0 210 210">
+        <circle class="ring-bg"   cx="105" cy="105" r="88"/>
+        <circle class="ring-fill" cx="105" cy="105" r="88" id="ringFill"/>
+      </svg>
+      <div class="ring-pct">
+        <span class="ring-pct-num" id="pctNum">0</span>
+        <span class="ring-pct-label">%</span>
+      </div>
+    </div>
+    <div class="love-label" id="loveLabel"></div>
+    <div class="love-msg"   id="loveMsg"></div>
+  </div>
+</div>
+
+<!-- Proposal Dialog -->
+<div class="overlay hidden" id="overlay">
+  <div class="dialog" id="dialog">
+    <span class="dialog-emoji" id="dialogEmoji">💍</span>
+    <div class="dialog-title" id="dialogTitle">Will you marry me?</div>
+    <div class="dialog-sub"   id="dialogSub"></div>
+    <div class="dialog-btns"  id="dialogBtns">
+      <button class="btn-yes" onclick="sayYes()">Yes! 💖</button>
+      <button class="btn-no"  id="btnNo" onclick="sayNo()">No</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ── Floating hearts ── */
+  const bg = document.getElementById('heartsBg');
+  const emojis = ['❤️','💕','💖','💗','💓','💞','🌹','✨'];
+  function spawnHeart() {
+    const el = document.createElement('div');
+    el.className = 'heart-particle';
+    el.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    el.style.left = Math.random() * 100 + 'vw';
+    el.style.fontSize = (0.8 + Math.random() * 1.4) + 'rem';
+    const dur = 6 + Math.random() * 8;
+    el.style.animationDuration = dur + 's';
+    el.style.animationDelay = (Math.random() * -dur) + 's';
+    bg.appendChild(el);
+    setTimeout(() => el.remove(), dur * 1000 + 1000);
+  }
+  for (let i = 0; i < 18; i++) spawnHeart();
+  setInterval(spawnHeart, 1200);
+
+  /* ── Score ── */
+  const SPECIAL = ['upasana', 'shiksha'];
+  let noCount = 0;
+  let proposalName = '';
+
+  function isSpecialPair(b, g) {
+    const bn = b.toLowerCase().trim();
+    const gn = g.toLowerCase().trim();
+    if (bn === 'anup' && SPECIAL.includes(gn)) return gn;
+    if (gn === 'anup' && SPECIAL.includes(bn)) return bn;
+    return null;
+  }
+
+  function loveScore(name1, name2) {
+    const combined = (name1 + name2).toLowerCase().replace(/\s/g, '');
+    let hash = 0;
+    for (let i = 0; i < combined.length; i++) hash = (hash * 31 + combined.charCodeAt(i)) >>> 0;
+    return 20 + (hash % 80);
+  }
+
+  const tiers = [
+    { max: 39, label: '❄️ Just Friends',       msg: 'You make great companions, but the romantic spark is faint. Give it time!',      colorClass: 'color-cold', labelClass: 'label-cold' },
+    { max: 59, label: '🌟 Growing Connection',  msg: 'There is real chemistry here! Nurture it and who knows where it leads.',         colorClass: 'color-warm', labelClass: 'label-warm' },
+    { max: 74, label: '💛 Strong Attraction',   msg: 'You two have serious potential. A little more effort and it could be magical.',  colorClass: 'color-warm', labelClass: 'label-warm' },
+    { max: 89, label: '❤️ Deep Love',           msg: 'The stars are aligned for you! This connection is rare and beautiful.',         colorClass: 'color-hot',  labelClass: 'label-hot'  },
+    { max: 99, label: '💞 Soulmates!',          msg: 'An extraordinary match made in heaven. Hold on to each other forever! 🌹',     colorClass: 'color-hot',  labelClass: 'label-hot'  },
+  ];
+
+  const noResponses = [
+    { emoji: '🥺', title: 'Are you sure??',           sub: 'My heart just broke a little… 💔 Please reconsider!' },
+    { emoji: '😭', title: "You can't be serious!",    sub: 'The stars, the moon, the whole galaxy voted YES. Are you really going against the universe?!' },
+    { emoji: '🙏', title: "I'm begging you…",         sub: 'I wrote your name in the sand, the wind said yes. I asked the clouds, they said yes. Why are YOU the difficult one?! 🌊' },
+    { emoji: '😤', title: 'This button is broken.',   sub: 'The "No" button clearly has a bug. Please click "Yes" instead. 🛠️' },
+    { emoji: '🎯', title: 'Statistically impossible!', sub: 'A 100% match only happens once every 7 billion people. You\'re literally a mathematical miracle. Say yes! 📊' },
+    { emoji: '🤯', title: 'DOES NOT COMPUTE',         sub: 'Error 404: Reason to say No — not found. Please try "Yes".' },
+    { emoji: '🌍', title: 'The universe disagrees.',  sub: 'Mercury is in retrograde AND you said no? Brave. Very brave.' },
+    { emoji: '😂', title: 'Okay okay okay…',          sub: "I'm fine. Totally fine. This is fine. 🔥 Just… one more chance?" },
+    { emoji: '🫠', title: 'Last warning!',             sub: "I have 47 more reasons ready. Don't make me use them all." },
+    { emoji: '😈', title: 'No more Mr. Nice Guy.',    sub: 'That "No" button is about to disappear forever. Your choice…' },
+  ];
+
+  /* ── Animate number ── */
+  function animateNum(el, target, dur = 1300) {
+    const start = performance.now();
+    function tick(now) {
+      const t = Math.min((now - start) / dur, 1);
+      el.textContent = Math.round(t * target);
+      if (t < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  /* ── Main calculate ── */
+  function calculate() {
+    const boy  = document.getElementById('boyName').value.trim();
+    const girl = document.getElementById('girlName').value.trim();
+
+    if (!boy || !girl) {
+      const id = !boy ? 'boyName' : 'girlName';
+      const inp = document.getElementById(id);
+      inp.focus();
+      inp.style.borderColor = '#dc2626';
+      setTimeout(() => inp.style.borderColor = '', 1500);
+      return;
+    }
+
+    const special = isSpecialPair(boy, girl);
+    const score   = special ? 100 : loveScore(boy, girl);
+    const tier    = special
+      ? { label: '💞 Soulmates Forever!', msg: '100% destined for each other. Written in the stars! 🌟', colorClass: 'color-hot', labelClass: 'label-hot' }
+      : (tiers.find(t => score <= t.max) || tiers[tiers.length - 1]);
+
+    document.getElementById('namesDisplay').innerHTML =
+      `<strong>${boy}</strong> &amp; <strong>${girl}</strong>`;
+
+    const r = 88;
+    const circumference = 2 * Math.PI * r;
+    const fill = document.getElementById('ringFill');
+    fill.style.strokeDasharray  = circumference;
+    fill.style.strokeDashoffset = circumference;
+    fill.className = 'ring-fill ' + tier.colorClass;
+
+    requestAnimationFrame(() => {
+      fill.style.strokeDashoffset = circumference * (1 - score / 100);
+    });
+
+    animateNum(document.getElementById('pctNum'), score);
+
+    const loveLabel = document.getElementById('loveLabel');
+    loveLabel.textContent = tier.label;
+    loveLabel.className   = 'love-label ' + tier.labelClass;
+    document.getElementById('loveMsg').textContent = tier.msg;
+
+    const resultEl = document.getElementById('result');
+    resultEl.classList.remove('visible');
+    void resultEl.offsetWidth;
+    resultEl.classList.add('visible');
+
+    if (special) {
+      proposalName = special.charAt(0).toUpperCase() + special.slice(1);
+      noCount = 0;
+      setTimeout(() => openProposal(), 1600);
+    }
+  }
+
+  /* ── Proposal logic ── */
+  function openProposal() {
+    noCount = 0;
+    setProposalState(0);
+    document.getElementById('overlay').classList.remove('hidden');
+  }
+
+  function setProposalState(n) {
+    if (n === 0) {
+      document.getElementById('dialogEmoji').textContent = '💍';
+      document.getElementById('dialogTitle').textContent = `Will you marry me, ${proposalName}? 💍`;
+      document.getElementById('dialogSub').textContent   = 'The calculator has spoken. 100% means forever. ✨';
+      document.getElementById('dialogBtns').innerHTML = `
+        <button class="btn-yes" onclick="sayYes()">Yes! 💖</button>
+        <button class="btn-no" id="btnNo" onclick="sayNo()">No</button>`;
+    } else {
+      const r = noResponses[n - 1];
+      document.getElementById('dialogEmoji').textContent = r.emoji;
+      document.getElementById('dialogTitle').textContent = r.title;
+      document.getElementById('dialogSub').textContent   = r.sub;
+    }
+  }
+
+  function sayYes() {
+    document.getElementById('dialogBtns').innerHTML = '';
+    document.getElementById('dialogEmoji').textContent = '🎉';
+    document.getElementById('dialogTitle').textContent = 'SHE SAID YES!! 🎊';
+    document.getElementById('dialogSub').innerHTML =
+      `<div class="confetti-row">🎊🎉💍🌹🥂</div>I knew you would! Best day ever!`;
+    for (let i = 0; i < 30; i++) setTimeout(spawnHeart, i * 80);
+  }
+
+  function sayNo() {
+    noCount++;
+
+    if (noCount >= 10) {
+      document.getElementById('dialogEmoji').textContent = '😏';
+      document.getElementById('dialogTitle').textContent = 'Oops… No button has left the chat.';
+      document.getElementById('dialogSub').innerHTML =
+        `<div class="surrender">
+          You clicked No <strong>10 times</strong>. 😤<br><br>
+          The "No" button has officially <strong>resigned</strong>.<br>
+          It packed its bags, called a taxi, and <em>left</em>. 🧳🚕<br><br>
+          Looks like there's only one option left…
+        </div>`;
+      document.getElementById('dialogBtns').innerHTML =
+        `<button class="btn-yes" onclick="sayYes()" style="animation: pulse 0.8s infinite;">Okay fine… Yes! 💍</button>`;
+      return;
+    }
+
+    setProposalState(noCount);
+
+    const btn = document.getElementById('btnNo');
+    if (!btn) return;
+
+    if (noCount >= 5) {
+      btn.classList.add('runaway');
+      const maxX = window.innerWidth  - 120;
+      const maxY = window.innerHeight - 60;
+      btn.style.position = 'fixed';
+      btn.style.left = Math.max(10, Math.min(maxX, Math.random() * window.innerWidth)) + 'px';
+      btn.style.top  = Math.max(10, Math.min(maxY, Math.random() * window.innerHeight)) + 'px';
+      btn.style.zIndex = 200;
+    } else {
+      const dialog = document.getElementById('dialog');
+      dialog.classList.remove('shake');
+      void dialog.offsetWidth;
+      dialog.classList.add('shake');
+    }
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') calculate(); });
+</script>
+</body>
+</html>
